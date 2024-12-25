@@ -104,7 +104,7 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 
 	case LWS_CALLBACK_CLIENT_CLOSED:
 		printf("closed\n");
-		return -1;
+		exit(1);
 
 	default:
 		break;
