@@ -7,6 +7,50 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 
 char *auth_msg;
 
+int parse_json(char *str) {
+	json_t *root;
+	json_error_t error;
+
+	root = json_loads(str, 0, &error);
+	if(!root) {
+		return 0;
+	}
+
+	if(!json_is_object(root)) {
+		return 0;
+	}
+
+	json_t *val = json_object_get(root, "exposure");
+	if(!json_is_real(val)) {
+		return 0;
+	}
+
+	double exposure = json_real_value(val);
+	json_decref(val);
+
+	val = json_object_get(root, "leverage_deribit");
+	if(!json_is_number(val)) {
+		return 0;
+	}
+
+	double leverage_deribit = json_real_value(val);
+	json_decref(val);
+
+	val = json_object_get(root, "leverage_bybit");
+	if(!json_is_number(val)) {
+		return 0;
+	}
+
+	double leverage_bybit = json_real_value(val);
+	json_decref(val);
+
+	printf("%.8f %.2f %.2f\n", exposure, leverage_deribit, leverage_bybit);
+
+	json_decref(root);
+
+	return 1;
+}
+
 static const struct lws_protocols protocols[] = {
 	{ "lws-minimal-client", callback, 0, 0, 0, NULL, 0 },
 	LWS_PROTOCOL_LIST_TERM
@@ -32,7 +76,7 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 		return -1;
 
 	case LWS_CALLBACK_CLIENT_RECEIVE:
-		printf("%s\n", (char *)in);
+		parse_json((char *)in);
 		break;
 
 	case LWS_CALLBACK_CLIENT_ESTABLISHED:
