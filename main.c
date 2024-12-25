@@ -1,3 +1,4 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -23,7 +24,13 @@ int parse_json(char *str) {
 		return 0;
 	}
 
-	json_t *val = json_object_get(root, "exposure");
+	json_t *val = json_object_get(root, "error");
+	if(val) {
+		printf("Authentication error\n");
+		exit(1);
+	}
+
+	val = json_object_get(root, "exposure");
 	if(!json_is_real(val)) {
 		return 0;
 	}
