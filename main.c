@@ -90,7 +90,7 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 	switch (reason) {
 	case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
 		printf("error: %s\n", in ? (char *)in : "(null)");
-		return -1;
+		exit(1);
 
 	case LWS_CALLBACK_CLIENT_RECEIVE:
 		parse_json((char *)in);
