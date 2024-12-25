@@ -5,6 +5,8 @@
 
 static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
+char *auth_msg;
+
 static const struct lws_protocols protocols[] = {
 	{ "lws-minimal-client", callback, 0, 0, 0, NULL, 0 },
 	LWS_PROTOCOL_LIST_TERM
@@ -22,6 +24,8 @@ static const struct lws_extension extensions[] = {
 };
 
 static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len) {
+	char buf[LWS_PRE + strlen(auth_msg)];
+
 	switch (reason) {
 	case LWS_CALLBACK_CLIENT_CONNECTION_ERROR:
 		printf("error: %s\n", in ? (char *)in : "(null)");
@@ -33,6 +37,9 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 
 	case LWS_CALLBACK_CLIENT_ESTABLISHED:
 		printf("connected\n");
+		memset(&buf[LWS_PRE], 0, strlen(auth_msg));
+		strncpy((char*)buf + LWS_PRE, auth_msg, strlen(auth_msg));
+		lws_write(wsi, &buf[LWS_PRE], sizeof(buf), LWS_WRITE_TEXT);
 		break;
 
 	case LWS_CALLBACK_CLIENT_CLOSED:
@@ -73,7 +80,7 @@ int main(void) {
 		return 1;
 	}
 
-	char *auth_msg = auth_json(ws_auth);
+	auth_msg = auth_json(ws_auth);
 
 	char host[256];
 	int port;
