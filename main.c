@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <pthread.h>
+#include <unistd.h>
 #include <dotenv.h>
 #include <jansson.h>
 #include <libwebsockets.h>
@@ -6,6 +8,7 @@
 static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *user, void *in, size_t len);
 
 char *auth_msg;
+double exposure, leverage_deribit, leverage_bybit;
 
 int parse_json(char *str) {
 	json_t *root;
@@ -25,7 +28,7 @@ int parse_json(char *str) {
 		return 0;
 	}
 
-	double exposure = json_real_value(val);
+	exposure = json_real_value(val);
 	json_decref(val);
 
 	val = json_object_get(root, "leverage_deribit");
@@ -33,7 +36,7 @@ int parse_json(char *str) {
 		return 0;
 	}
 
-	double leverage_deribit = json_real_value(val);
+	leverage_deribit = json_real_value(val);
 	json_decref(val);
 
 	val = json_object_get(root, "leverage_bybit");
@@ -41,14 +44,21 @@ int parse_json(char *str) {
 		return 0;
 	}
 
-	double leverage_bybit = json_real_value(val);
+	leverage_bybit = json_real_value(val);
 	json_decref(val);
-
-	printf("%.8f %.2f %.2f\n", exposure, leverage_deribit, leverage_bybit);
 
 	json_decref(root);
 
 	return 1;
+}
+
+void *display(void *args) {
+	while(1) {
+		printf("\033[2J\033[H\033[?25l\n"); // clear screen, move cursor to top of screen, hide cursor
+		printf("  Exposure: %.8f\n", exposure);
+		printf("  Leverage: %.2f %.2f\n", leverage_deribit, leverage_bybit);
+		usleep(100000);
+	}
 }
 
 static const struct lws_protocols protocols[] = {
@@ -80,7 +90,6 @@ static int callback(struct lws *wsi, enum lws_callback_reasons reason, void *use
 		break;
 
 	case LWS_CALLBACK_CLIENT_ESTABLISHED:
-		printf("connected\n");
 		memset(&buf[LWS_PRE], 0, strlen(auth_msg));
 		strncpy((char*)buf + LWS_PRE, auth_msg, strlen(auth_msg));
 		lws_write(wsi, &buf[LWS_PRE], sizeof(buf), LWS_WRITE_TEXT);
@@ -172,6 +181,9 @@ int main(void) {
 		printf("error connecting\n");
 		return 1;
 	}
+
+	pthread_t t;
+	pthread_create(&t, NULL, display, NULL);
 
 	while (1) {
 		lws_service(context, 0);
