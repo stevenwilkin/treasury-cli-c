@@ -30,7 +30,20 @@ int main(void) {
 	}
 
 	char *auth_msg = auth_json(ws_auth);
-	printf("%s\n", auth_msg);
+
+	char host[256];
+	int port;
+	char path[256];
+
+	int n = sscanf(ws_url, "%*[^:]://%[^:]:%d%s", host, &port, path);
+	if(n != 3) {
+		printf("Error parsing url\n");
+		return 1;
+	}
+
+	printf("%s\n", host);
+	printf("%d\n", port);
+	printf("%s\n", path);
 
 	return 0;
 }
